@@ -1,0 +1,14 @@
+[Unit]
+Description=Dimmer service
+After=redis-server.service
+Requires=redis-server.service
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/app
+ExecStart=/bin/bash -c ". venv/bin/activate; python dimmer-main.py"
+StandardOutput=syslog
+StandardError=syslog
+
+[Install]
+WantedBy=multi-user.target

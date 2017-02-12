@@ -1,0 +1,20 @@
+[Unit]
+Description=Bluetooth service
+Documentation=man:bluetoothd(8)
+
+[Service]
+Type=dbus
+BusName=org.bluez
+ExecStart=/usr/lib/bluetooth/bluetoothd
+#ExecStartPost=/usr/bin/sdptool add SP
+ExecStartPost=/bin/bash -c "sleep 3; /bin/hciconfig hci0 up ; /bin/hciconfig hci0 piscan; /bin/hciconfig hci0 sspmode 1"
+
+NotifyAccess=main
+#WatchdogSec=10
+#Restart=on-failure
+#CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+LimitNPROC=1
+
+[Install]
+WantedBy=bluetooth.target
+Alias=dbus-org.bluez.service

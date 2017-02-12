@@ -1,0 +1,13 @@
+[Unit]
+Description=BT agent service
+After=bluetooth.service
+Requires=bluetooth.service
+
+[Service]
+WorkingDirectory=/root/agent
+ExecStart=/usr/bin/python /root/agent/simple-agent.py
+StandardOutput=syslog
+StandardError=syslog
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,95 @@
+#!/bin/bash
+
+echo "Welcome to ohmyheart project"
+echo "Enter password to continue"
+echo "> "
+
+read PASW
+
+if [ "${PASW}" != "5022212" ]; then
+  echo "Wrong password!"
+  sleep 10;
+  exit 1;
+fi;
+
+while true; do
+  echo "MENU: available commands";
+  echo "  wifi <ssid> <pass> - setup wifi internet access"
+  echo "  ba <N> - brightness for chan a [0-255]"
+  echo "  bb <N> - brightness for chan b [0-255]"
+  echo "  bi <N> - idle brightness [0-255]"
+  echo "  off - set all brightness to zero"
+  echo "  on - set brightness to 64 64 64 (25%)"
+  echo "  st - status"
+  echo "  re - reboot"
+
+  echo -n "> ";
+  read CMD;
+
+  case "${CMD}" in
+	wifi)
+		read SSID PASS;
+		echo setup ssid=${SSID}
+		
+		WPA="/etc/wpa_supplicant/wpa_supplicant.conf"
+		echo "country=RU" >$WPA
+		echo "ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev" >>$WPA
+		echo "update_config=1" >>$WPA
+		echo "network={" >>$WPA
+		echo "  ssid=\"${SSID}\"" >>$WPA
+		echo "  psk=\"${PASS}\"" >>$WPA
+		echo "  priority=5" >>$WPA
+		echo "}" >>$WPA
+		
+		service wpa_supplicant restart		
+		;;
+	st)
+		service hrmon status
+		service dimmer status
+		echo
+		echo "--- redis keys: ---"
+		for KEY in `redis-cli --raw keys \*`; do
+		  echo $KEY `redis-cli --raw get "$KEY"`;
+		done;
+		echo
+		echo "--- route status: ---"
+		ip ro
+		;;
+	ba)
+		read VAL
+		if [ $(( $VAL + 1 )) -le 256 ]; then
+		  redis-cli set bright.1 $VAL;
+		fi;
+		;;
+	bb)
+		read VAL
+		if [ $(( $VAL + 1 )) -le 256 ]; then
+		  redis-cli set bright.2 $VAL;
+		fi;
+		;;
+	bi)
+		read VAL
+		if [ $(( $VAL + 1 )) -le 256 ]; then
+		  redis-cli set bright.idle $VAL;
+		fi;
+		;;
+	off)
+		redis-cli set bright.1 0;
+		redis-cli set bright.2 0;
+		redis-cli set bright.idle 0;
+		;;
+	on)
+		redis-cli set bright.1 64;
+		redis-cli set bright.2 64;
+		redis-cli set bright.idle 64;
+		;;
+	re)
+		reboot
+		;;		
+
+	*)
+		echo "Unknown command: $CMD"
+		;;
+
+  esac
+done;

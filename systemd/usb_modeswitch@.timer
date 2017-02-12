@@ -1,0 +1,6 @@
+[Unit]
+Description=USB_ModeSwitch
+
+[Timer]
+OnStartupSec=5
+

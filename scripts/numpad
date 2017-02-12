@@ -1,0 +1,74 @@
+#!/bin/bash
+
+exec >>/var/log/numpad.log 2>&1
+
+setleds -L -num
+
+echo "Welcome to ohmyheart project"
+echo "Enter password to continue"
+echo "> "
+
+setleds -L +num
+
+read PASW
+
+if [ "${PASW}" != "5022212" ]; then
+  echo "Wrong password!"
+  sleep 10;
+  exit 1;
+fi;
+
+while true; do
+  echo "MENU: available commands";
+  echo "  1[0-9][0-9] brightnes 0-99 chan1"
+  echo "  2[0-9][0-9] brightnes 0-99 chan2"
+  echo "  3[0-9][0-9] brightnes 0-99 chan_idle"
+  echo "  400 - set all brightness to zero"
+  echo "  500 - set brightness default"
+  echo "  666 - logout"
+  echo "  999 - reboot"
+
+  echo -n "> ";
+  read CMD;
+  
+  echo "cmd is ${CMD}"
+
+  if [ "${CMD}" -lt 100 ]; then
+  	echo "error";
+  elif [ "${CMD}" -le 199 ]; then
+  		VAL=$(( ($CMD - 100) * 255 / 99 ));
+		if [ $(( $VAL + 1 )) -le 256 ]; then
+		  redis-cli set bright.1 $VAL;
+		else
+		  echo val=$VAL too big
+		fi;
+  elif [ "${CMD}" -le 299 ]; then
+  		VAL=$(( ($CMD - 200) * 255 / 99 ));
+		if [ $(( $VAL + 1 )) -le 256 ]; then
+		  redis-cli set bright.2 $VAL;
+		else
+		  echo val=$VAL too big
+		fi;
+  elif [ "${CMD}" -le 399 ]; then
+  		VAL=$(( ($CMD - 300) * 255 / 99 ));
+		if [ $(( $VAL + 1 )) -le 256 ]; then
+		  redis-cli set bright.idle $VAL;
+		else
+		  echo val=$VAL too big
+		fi;
+  elif [ "${CMD}" -eq 400 ]; then
+		redis-cli set bright.1 0;
+		redis-cli set bright.2 0;
+		redis-cli set bright.idle 0;
+  elif [ "${CMD}" -eq 500 ]; then
+		redis-cli set bright.1 64;
+		redis-cli set bright.2 64;
+		redis-cli set bright.idle 64;
+  elif [ "${CMD}" -eq 666 ]; then
+  		exit 0;
+  elif [ "${CMD}" -eq 999 ]; then
+  		sudo reboot;
+  else
+		echo "Unknown command: $CMD"
+  fi;
+done;

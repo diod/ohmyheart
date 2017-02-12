@@ -1,0 +1,7 @@
+[Unit]
+Description=USB_ModeSwitch
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/usb_modeswitch -c "/etc/usb_modeswitch.d/12d1:1505"
+Environment="TMPDIR=/run"

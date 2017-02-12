@@ -1,0 +1,14 @@
+[Unit]
+Description=HRMontior service
+After=redis-server.service
+Requires=redis-server.service
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/app
+ExecStart=/bin/bash -c ". venv/bin/activate; python hrm-main.py"
+StandardOutput=syslog
+StandardError=syslog
+
+[Install]
+WantedBy=multi-user.target
