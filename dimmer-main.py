@@ -3,9 +3,29 @@ import time
 import serial
 import redis
 
+import serial.tools.list_ports;
+
+# detect proper port
+port_found=0
+port_dev=''
+while port_found==0:
+  for port in serial.tools.list_ports.comports():
+    if port[1] == 'FT232R USB UART':
+      port_found=1
+      port_dev=port[0];
+
+  if port_found==0:
+    print "Could not find port with FT232R. Will retry. Available ports are:"
+    for port in serial.tools.list_ports.comports():
+      print "%s %s %s" % (port[0],port[1],port[2]);
+
+    time.sleep(10)
+
+print "Found port: %s" % (port_dev)
+
 #serial for dimmer
 ser = serial.Serial(
-    port='/dev/ttyUSB0',
+    port=port_dev,
     baudrate=38400,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_ONE,
@@ -80,29 +100,14 @@ t1=time.time(); #now
 t2=t1;
 t_idle = t1;
 
-bpm_idle = 40
-
-
-try:
-  bright1 = int(db.get('bright.1'));
-except: 
-  bright1 = 64
-  
-try:
-  bright2 = int(db.get('bright.2'));
-except: 
-  bright2 = 64
-  
-try:
-  bright_idle = int(db.get('bright.idle'))
-except:
-  bright_idle = 64
+bpm_idle = 30
 
 level1 = 0
 level2 = 0
 
 #last output value and chan
-chan=16+10
+chan_a=16+10
+chan_b=10
 outlvl = -1
 
 valid = 10 #time when not changing value is valid
@@ -112,14 +117,14 @@ while True:
             # fetch from redis
             try:
               bpm1 = int(db.get('bpm.1.value'))
-              bpm1upd = int(db.get('bpm.1.upd'))
+              bpm1upd = float(db.get('bpm.1.upd'))
             except:
               bpm1 = 0
               bpm1upd = 0
               
             try:
               bpm2 = int(db.get('bpm.2.value'))
-              bpm2upd = int(db.get('bpm.2.upd'))
+              bpm2upd = float(db.get('bpm.2.upd'))
             except:
               bpm2 = 0
               bpm2upd = 0
@@ -134,6 +139,10 @@ while True:
             except:
               bright2 = 64
 
+            try:
+              bright_idle = int(db.get('bright.idle'))
+            except:
+              bright_idle = 64
 
             #go
             now = time.time()
@@ -160,6 +169,9 @@ while True:
             else:
               level_idle = 0
 
+
+#            print "bpm1: %d (%f), bpm2: %d (%f), level1: %d, level2: %d, level_idle: %d" % (bpm1,bpm1upd,bpm2,bpm2upd,level1,level2,level_idle)
+
             #mix func
             lvl = max(level1,level2,level_idle); #max
 
@@ -183,7 +195,8 @@ while True:
               t_idle = now
 
             if outlvl != lvl: 
-              dimmer_set(chan, lvl);
+              dimmer_set(chan_a, lvl);
+              dimmer_set(chan_b, lvl);
               outlvl = lvl
               continue
 
