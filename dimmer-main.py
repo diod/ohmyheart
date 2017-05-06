@@ -119,7 +119,7 @@ t_decay=0.050
 
 #idle
 t_pulse_idle=1.000
-t_ramp_idle=0.160
+t_ramp_idle=0.200
 t_decay_idle=0.300
 
 #delay_idle not used for pulse_dual
@@ -226,7 +226,7 @@ while True:
             
             #idle chan
             dly_idle = 60.0/bpm_idle
-            chan_idle = pulse_dual_level(now-t_idle, dly_idle, bright_idle, t_pulse_idle, t_ramp_idle, t_decay_idle);
+            chan_idle = max(0,pulse_dual_level(now-t_idle, dly_idle, bright_idle, t_pulse_idle, t_ramp_idle, t_decay_idle));
 
             #idle if no hrm            
             if ( not (bpm2 > 0 and bpm2upd + valid >= now) and not (bpm1 > 0 and bpm1upd + valid >= now)):

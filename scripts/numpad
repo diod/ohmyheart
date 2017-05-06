@@ -68,7 +68,7 @@ while true; do
 		  echo val=$VAL too big
 		fi;
   elif [ "${CMD}" -le 599 ]; then
-  		VAL=$(( ($CMD - 400) * 255 / 99 ));
+  		VAL=$(( ($CMD - 500) * 255 / 99 ));
 		if [ $(( $VAL + 1 )) -le 256 ]; then
 		  redis-cli set bright.b $VAL;
 		else
