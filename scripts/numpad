@@ -12,20 +12,24 @@ setleds -L +num
 
 read PASW
 
-if [ "${PASW}" != "5022212" ]; then
+if [ "${PASW}" != "5555" ]; then
   echo "Wrong password!"
-  sleep 10;
+  sleep 1;
   exit 1;
 fi;
 
 while true; do
   echo "MENU: available commands";
-  echo "  1[0-9][0-9] brightnes 0-99 chan1"
-  echo "  2[0-9][0-9] brightnes 0-99 chan2"
-  echo "  3[0-9][0-9] brightnes 0-99 chan_idle"
-  echo "  400 - set all brightness to zero"
-  echo "  500 - set brightness default"
-  echo "  666 - logout"
+  echo "  1[0-9][0-9] brightnes 0-99 hrm1 (b1)"
+  echo "  2[0-9][0-9] brightnes 0-99 hrm2 (b2)"
+  echo "  3[0-9][0-9] brightnes 0-99 idle (bi)"
+  echo "  4[0-9][0-9] brightnes 0-99 output channel a (ba)"
+  echo "  5[0-9][0-9] brightnes 0-99 output channel b (bb)"
+  echo "  6[0-9][0-9] - set idle bpm (pi)"
+  echo "  70[0-4] / 71[0-4] - set mode for chan [ab] to [0-4] (ma/mb)"
+  echo "  755 - set ba and bb to 0"
+  echo "  777 - reset to factory defaults"
+  echo "  888 - logout"
   echo "  999 - reboot"
 
   echo -n "> ";
@@ -56,15 +60,47 @@ while true; do
 		else
 		  echo val=$VAL too big
 		fi;
-  elif [ "${CMD}" -eq 400 ]; then
-		redis-cli set bright.1 0;
-		redis-cli set bright.2 0;
-		redis-cli set bright.idle 0;
-  elif [ "${CMD}" -eq 500 ]; then
-		redis-cli set bright.1 64;
-		redis-cli set bright.2 64;
-		redis-cli set bright.idle 64;
-  elif [ "${CMD}" -eq 666 ]; then
+  elif [ "${CMD}" -le 499 ]; then
+  		VAL=$(( ($CMD - 400) * 255 / 99 ));
+		if [ $(( $VAL + 1 )) -le 256 ]; then
+		  redis-cli set bright.a $VAL;
+		else
+		  echo val=$VAL too big
+		fi;
+  elif [ "${CMD}" -le 599 ]; then
+  		VAL=$(( ($CMD - 400) * 255 / 99 ));
+		if [ $(( $VAL + 1 )) -le 256 ]; then
+		  redis-cli set bright.b $VAL;
+		else
+		  echo val=$VAL too big
+		fi;
+  elif [ "${CMD}" -le 699 ]; then
+  		VAL=$(( $CMD - 600 ));
+		if [ $(( $VAL + 1 )) -le 256 ]; then
+		  redis-cli set pulse.idle $VAL;
+		else
+		  echo val=$VAL too big
+		fi;
+  elif [ "${CMD}" -le 704 ]; then
+  		VAL=$(( $CMD - 700 ));
+		redis-cli set mode.a $VAL;
+  elif [ "${CMD}" -le 714 -a "${CMD}" -ge 710 ]; then
+  		VAL=$(( $CMD - 710 ));
+		redis-cli set mode.b $VAL;
+  elif [ "${CMD}" -eq 755 ]; then
+		redis-cli set bright.a 0;
+		redis-cli set bright.b 0;
+  elif [ "${CMD}" -eq 777 ]; then
+		redis-cli set bright.1 255;
+		redis-cli set bright.2 255;
+		redis-cli set bright.a 255;
+		redis-cli set bright.b 255;
+		redis-cli set bright.idle 255;
+
+		redis-cli set mode.a 0;
+		redis-cli set mode.b 0;
+		redis-cli set pulse.idle 24;
+  elif [ "${CMD}" -eq 888 ]; then
   		exit 0;
   elif [ "${CMD}" -eq 999 ]; then
   		sudo reboot;

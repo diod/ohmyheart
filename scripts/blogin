@@ -6,7 +6,7 @@ echo "> "
 
 read PASW
 
-if [ "${PASW}" != "5022212" ]; then
+if [ "${PASW}" != "5555" ]; then
   echo "Wrong password!"
   sleep 10;
   exit 1;
@@ -14,21 +14,32 @@ fi;
 
 while true; do
   echo "MENU: available commands";
-  echo "  wifi <ssid> <pass> - setup wifi internet access"
+  echo "  b1 <N> - brightness for hrm chan 1 [0-255]"
+  echo "  b2 <N> - brightness for hrm chan 2 [0-255]"
   echo "  ba <N> - brightness for chan a [0-255]"
   echo "  bb <N> - brightness for chan b [0-255]"
   echo "  bi <N> - idle brightness [0-255]"
+  echo "  pi <N> - idle pulse (default: 20 bpm = 1pulse/3seconds) "
+  echo "Set chan modes: 0=hrm/idle, 1=idle, 2=hrm/off, 3=off, 4=on"
+  echo "  ma <n> - mode for channel a"
+  echo "  mb <n> - mode for channel b"
+  echo "  wifi <ssid> <pass> - setup wifi internet access"
   echo "  off - set all brightness to zero"
   echo "  on - set brightness to 64 64 64 (25%)"
   echo "  st - status"
+  echo "  reset - reset all settings to factory defaults"
   echo "  re - reboot"
 
   echo -n "> ";
-  read CMD;
+  read ROW;
+  
+  PARAMS=($ROW)
+  CMD="${PARAMS[0]}"
 
   case "${CMD}" in
 	wifi)
-		read SSID PASS;
+		SSID="${PARAMS[1]}"
+		PASS="${PARAMS[2]}"
 		echo setup ssid=${SSID}
 		
 		WPA="/etc/wpa_supplicant/wpa_supplicant.conf"
@@ -55,33 +66,78 @@ while true; do
 		echo "--- route status: ---"
 		ip ro
 		;;
-	ba)
-		read VAL
-		if [ $(( $VAL + 1 )) -le 256 ]; then
+	b1)
+		VAL="${PARAMS[1]}"
+		if [ $(( $VAL + 1 )) -le 255 ]; then
 		  redis-cli set bright.1 $VAL;
 		fi;
 		;;
-	bb)
-		read VAL
-		if [ $(( $VAL + 1 )) -le 256 ]; then
+	b2)
+		VAL="${PARAMS[1]}"
+		if [ $(( $VAL + 1 )) -le 255 ]; then
 		  redis-cli set bright.2 $VAL;
 		fi;
 		;;
+	ba)
+		VAL="${PARAMS[1]}"
+		if [ $(( $VAL + 1 )) -le 256 ]; then
+		  redis-cli set bright.a $VAL;
+		fi;
+		;;
+	bb)
+		VAL="${PARAMS[1]}"
+		if [ $(( $VAL + 1 )) -le 256 ]; then
+		  redis-cli set bright.b $VAL;
+		fi;
+		;;
 	bi)
-		read VAL
+		VAL="${PARAMS[1]}"
 		if [ $(( $VAL + 1 )) -le 256 ]; then
 		  redis-cli set bright.idle $VAL;
+		fi;
+		;;
+	pi)
+		VAL="${PARAMS[1]}"
+		if [ $(( $VAL + 1 )) -le 200 ]; then
+		  redis-cli set pulse.idle $VAL;
+		fi;
+		;;
+	ma)
+		VAL="${PARAMS[1]}"
+		if [ $(( $VAL + 1 )) -le 200 ]; then
+		  redis-cli set mode.a $VAL;
+		fi;
+		;;
+	mb)
+		VAL="${PARAMS[1]}"
+		if [ $(( $VAL + 1 )) -le 200 ]; then
+		  redis-cli set mode.b $VAL;
 		fi;
 		;;
 	off)
 		redis-cli set bright.1 0;
 		redis-cli set bright.2 0;
 		redis-cli set bright.idle 0;
+		redis-cli set bright.a 0;
+		redis-cli set bright.b 0;
 		;;
 	on)
-		redis-cli set bright.1 64;
-		redis-cli set bright.2 64;
-		redis-cli set bright.idle 64;
+		redis-cli set bright.1 255;
+		redis-cli set bright.2 255;
+		redis-cli set bright.a 255;
+		redis-cli set bright.b 255;
+		redis-cli set bright.idle 255;
+		;;
+	reset)
+		redis-cli set bright.1 255;
+		redis-cli set bright.2 255;
+		redis-cli set bright.a 255;
+		redis-cli set bright.b 255;
+		redis-cli set bright.idle 255;
+
+		redis-cli set mode.a 0;
+		redis-cli set mode.b 0;
+		redis-cli set pulse.idle 24;
 		;;
 	re)
 		reboot
