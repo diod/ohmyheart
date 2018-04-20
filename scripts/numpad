@@ -2,13 +2,12 @@
 
 exec >>/var/log/numpad.log 2>&1
 
-setleds -L -num
+setleds -L
+setleds -D -num
 
 echo "Welcome to ohmyheart project"
 echo "Enter password to continue"
 echo "> "
-
-setleds -L +num
 
 read PASW
 
